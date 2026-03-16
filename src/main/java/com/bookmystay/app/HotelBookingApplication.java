@@ -9,6 +9,8 @@ import com.bookmystay.model.SingleRoom;
 import com.bookmystay.model.SuiteRoom;
 import com.bookmystay.service.AddOnServiceManager;
 import com.bookmystay.service.BookingService;
+import com.bookmystay.service.BookingHistory;
+import com.bookmystay.service.BookingReportService;
 import com.bookmystay.service.BookingRequestQueue;
 import com.bookmystay.service.RoomInventory;
 import com.bookmystay.service.RoomSearchService;
@@ -31,7 +33,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.6";
+    private static final String APP_VERSION = "v1.7";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -82,6 +84,7 @@ public final class HotelBookingApplication {
 
         // UC6: Confirm requests, allocate unique room IDs, and decrement inventory.
         BookingService bookingService = new BookingService(inventory);
+        BookingHistory bookingHistory = new BookingHistory();
         List<Reservation> confirmedReservations = new ArrayList<>();
         System.out.println();
         System.out.println("Reservation Confirmations:");
@@ -94,6 +97,7 @@ public final class HotelBookingApplication {
             if (processed.getStatus() == ReservationStatus.CONFIRMED) {
                 System.out.println("Confirmed -> " + processed);
                 confirmedReservations.add(processed);
+                bookingHistory.addConfirmedReservation(processed);
             } else {
                 System.out.println("Pending (no availability) -> " + processed);
             }
@@ -120,6 +124,16 @@ public final class HotelBookingApplication {
                 System.out.println(reservation.getReservationId() + " -> " + services + " | Extra Cost: $" + String.format("%.2f", additionalCost));
             }
         }
+
+        // UC8: Historical tracking and report generation without mutating booking history.
+        BookingReportService reportService = new BookingReportService();
+        System.out.println();
+        System.out.println("Booking History (Insertion Order):");
+        for (Reservation reservation : bookingHistory.getAllReservations()) {
+            System.out.println(reservation);
+        }
+        System.out.println("Summary Report:");
+        System.out.println(reportService.generateSummaryReport(bookingHistory));
 
         System.out.println();
         System.out.println("Startup complete. Exiting application.");
