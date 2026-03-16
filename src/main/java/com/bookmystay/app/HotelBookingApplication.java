@@ -1,11 +1,13 @@
 package com.bookmystay.app;
 
 import com.bookmystay.model.DoubleRoom;
+import com.bookmystay.model.AddOnService;
 import com.bookmystay.model.Reservation;
 import com.bookmystay.model.ReservationStatus;
 import com.bookmystay.model.Room;
 import com.bookmystay.model.SingleRoom;
 import com.bookmystay.model.SuiteRoom;
+import com.bookmystay.service.AddOnServiceManager;
 import com.bookmystay.service.BookingService;
 import com.bookmystay.service.BookingRequestQueue;
 import com.bookmystay.service.RoomInventory;
@@ -13,6 +15,7 @@ import com.bookmystay.service.RoomSearchService;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +31,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.5";
+    private static final String APP_VERSION = "v1.6";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -79,6 +82,7 @@ public final class HotelBookingApplication {
 
         // UC6: Confirm requests, allocate unique room IDs, and decrement inventory.
         BookingService bookingService = new BookingService(inventory);
+        List<Reservation> confirmedReservations = new ArrayList<>();
         System.out.println();
         System.out.println("Reservation Confirmations:");
         while (!requestQueue.isEmpty()) {
@@ -89,6 +93,7 @@ public final class HotelBookingApplication {
 
             if (processed.getStatus() == ReservationStatus.CONFIRMED) {
                 System.out.println("Confirmed -> " + processed);
+                confirmedReservations.add(processed);
             } else {
                 System.out.println("Pending (no availability) -> " + processed);
             }
@@ -97,6 +102,24 @@ public final class HotelBookingApplication {
         System.out.println("Allocated Room IDs: " + bookingService.getAllocatedRoomIds());
         System.out.println("Allocation by Room Type: " + bookingService.getAllocatedByRoomType());
         System.out.println("Inventory after allocation: " + inventory.getCurrentAvailability());
+
+        // UC7: Attach optional services to reservation IDs without mutating core booking state.
+        AddOnServiceManager addOnServiceManager = new AddOnServiceManager();
+        if (!confirmedReservations.isEmpty()) {
+            Reservation first = confirmedReservations.get(0);
+            addOnServiceManager.addService(first.getReservationId(), new AddOnService("Breakfast", 15.0));
+            addOnServiceManager.addService(first.getReservationId(), new AddOnService("Airport Pickup", 25.0));
+        }
+
+        System.out.println();
+        System.out.println("Add-On Services by Reservation:");
+        for (Reservation reservation : confirmedReservations) {
+            List<AddOnService> services = addOnServiceManager.getServices(reservation.getReservationId());
+            double additionalCost = addOnServiceManager.calculateAdditionalCost(reservation.getReservationId());
+            if (!services.isEmpty()) {
+                System.out.println(reservation.getReservationId() + " -> " + services + " | Extra Cost: $" + String.format("%.2f", additionalCost));
+            }
+        }
 
         System.out.println();
         System.out.println("Startup complete. Exiting application.");
