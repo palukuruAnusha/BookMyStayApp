@@ -1,9 +1,11 @@
 package com.bookmystay.app;
 
 import com.bookmystay.model.DoubleRoom;
+import com.bookmystay.model.Reservation;
 import com.bookmystay.model.Room;
 import com.bookmystay.model.SingleRoom;
 import com.bookmystay.model.SuiteRoom;
+import com.bookmystay.service.BookingRequestQueue;
 import com.bookmystay.service.RoomInventory;
 import com.bookmystay.service.RoomSearchService;
 
@@ -24,7 +26,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.3";
+    private static final String APP_VERSION = "v1.4";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -59,6 +61,19 @@ public final class HotelBookingApplication {
         for (Room room : availableRooms) {
             System.out.println(room.getDetails() + " | Available: " + inventory.getAvailability(room.getRoomType()));
         }
+
+        // UC5: Accept booking requests and preserve arrival order using FIFO queue.
+        BookingRequestQueue requestQueue = new BookingRequestQueue();
+        requestQueue.submitRequest(new Reservation("R-1001", "Asha", "Single"));
+        requestQueue.submitRequest(new Reservation("R-1002", "Rahul", "Double"));
+        requestQueue.submitRequest(new Reservation("R-1003", "Meena", "Suite"));
+
+        System.out.println();
+        System.out.println("Queued Booking Requests (FIFO order):");
+        for (Reservation reservation : requestQueue.snapshotInArrivalOrder()) {
+            System.out.println(reservation);
+        }
+        System.out.println("Inventory unchanged after request intake: " + inventory.getCurrentAvailability());
 
         System.out.println();
         System.out.println("Startup complete. Exiting application.");
