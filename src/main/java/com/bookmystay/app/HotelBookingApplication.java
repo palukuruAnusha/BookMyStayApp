@@ -14,6 +14,7 @@ import com.bookmystay.service.BookingHistory;
 import com.bookmystay.service.BookingReportService;
 import com.bookmystay.service.BookingRequestQueue;
 import com.bookmystay.service.CancellationService;
+import com.bookmystay.service.ConcurrentBookingProcessor;
 import com.bookmystay.service.RoomInventory;
 import com.bookmystay.service.RoomSearchService;
 
@@ -35,7 +36,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.10";
+    private static final String APP_VERSION = "v1.11";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -143,6 +144,40 @@ public final class HotelBookingApplication {
 
         System.out.println("Rollback Stack (released room IDs): " + cancellationService.getRollbackStackSnapshot());
         System.out.println("Inventory after cancellation attempts: " + inventory.getCurrentAvailability());
+
+        // UC11: Concurrent request simulation with synchronized critical sections.
+        Map<String, Integer> concurrentAvailability = new HashMap<>();
+        concurrentAvailability.put("Single", 2);
+        concurrentAvailability.put("Double", 1);
+        concurrentAvailability.put("Suite", 1);
+
+        RoomInventory concurrentInventory = new RoomInventory(concurrentAvailability);
+        BookingRequestQueue concurrentQueue = new BookingRequestQueue();
+        concurrentQueue.submitRequest(new Reservation("CR-2001", "Guest-1", "Single"));
+        concurrentQueue.submitRequest(new Reservation("CR-2002", "Guest-2", "Single"));
+        concurrentQueue.submitRequest(new Reservation("CR-2003", "Guest-3", "Single"));
+        concurrentQueue.submitRequest(new Reservation("CR-2004", "Guest-4", "Double"));
+        concurrentQueue.submitRequest(new Reservation("CR-2005", "Guest-5", "Suite"));
+        concurrentQueue.submitRequest(new Reservation("CR-2006", "Guest-6", "Suite"));
+
+        BookingService concurrentBookingService = new BookingService(concurrentInventory);
+        BookingHistory concurrentHistory = new BookingHistory();
+        ConcurrentBookingProcessor concurrentProcessor = new ConcurrentBookingProcessor(concurrentBookingService, concurrentHistory);
+        List<Reservation> concurrentResults = concurrentProcessor.process(concurrentQueue, 3);
+
+        int concurrentConfirmed = 0;
+        for (Reservation reservation : concurrentResults) {
+            if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
+                concurrentConfirmed++;
+            }
+        }
+
+        System.out.println();
+        System.out.println("Concurrent Booking Simulation:");
+        System.out.println("Processed Requests: " + concurrentResults.size());
+        System.out.println("Confirmed Requests: " + concurrentConfirmed);
+        System.out.println("Unique Allocated Room IDs: " + concurrentBookingService.getAllocatedRoomIds().size());
+        System.out.println("Concurrent Inventory After Processing: " + concurrentInventory.getCurrentAvailability());
 
         // UC7: Attach optional services to reservation IDs without mutating core booking state.
         AddOnServiceManager addOnServiceManager = new AddOnServiceManager();
