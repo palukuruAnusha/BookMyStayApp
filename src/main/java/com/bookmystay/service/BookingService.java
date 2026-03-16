@@ -1,5 +1,7 @@
 package com.bookmystay.service;
 
+import com.bookmystay.exception.InvalidBookingException;
+import com.bookmystay.exception.InventoryStateException;
 import com.bookmystay.model.Reservation;
 import com.bookmystay.model.ReservationStatus;
 
@@ -15,12 +17,14 @@ import java.util.Set;
 public class BookingService {
 
     private final RoomInventory inventory;
+    private final BookingValidator validator;
     private final Set<String> allocatedRoomIds = new HashSet<>();
     private final Map<String, Set<String>> allocatedByRoomType = new HashMap<>();
     private final Map<String, Integer> roomTypeAllocationCounter = new HashMap<>();
 
     public BookingService(RoomInventory inventory) {
         this.inventory = inventory;
+        this.validator = new BookingValidator();
     }
 
     public Reservation processNextRequest(BookingRequestQueue queue) {
@@ -29,8 +33,18 @@ public class BookingService {
             return null;
         }
 
+        try {
+            validator.validate(next, inventory);
+            inventory.validateState();
+        } catch (InvalidBookingException | InventoryStateException ex) {
+            next.setStatus(ReservationStatus.FAILED);
+            next.setFailureReason(ex.getMessage());
+            return next;
+        }
+
         String roomType = next.getRequestedRoomType();
         if (!inventory.decrementAvailability(roomType)) {
+            next.setFailureReason("No availability for room type '" + roomType + "'.");
             return next;
         }
 
@@ -40,6 +54,7 @@ public class BookingService {
 
         next.setAllocatedRoomId(roomId);
         next.setStatus(ReservationStatus.CONFIRMED);
+        next.setFailureReason(null);
         return next;
     }
 

@@ -1,5 +1,7 @@
 package com.bookmystay.service;
 
+import com.bookmystay.exception.InventoryStateException;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +19,10 @@ public class RoomInventory {
 
     public int getAvailability(String roomType) {
         return roomAvailability.getOrDefault(roomType, 0);
+    }
+
+    public boolean hasRoomType(String roomType) {
+        return roomAvailability.containsKey(roomType);
     }
 
     public Map<String, Integer> getCurrentAvailability() {
@@ -50,5 +56,13 @@ public class RoomInventory {
 
     public void registerRoomType(String roomType, int count) {
         roomAvailability.put(roomType, Math.max(0, count));
+    }
+
+    public void validateState() throws InventoryStateException {
+        for (Map.Entry<String, Integer> entry : roomAvailability.entrySet()) {
+            if (entry.getValue() == null || entry.getValue() < 0) {
+                throw new InventoryStateException("Invalid inventory count for room type '" + entry.getKey() + "'.");
+            }
+        }
     }
 }

@@ -13,6 +13,7 @@ public class Reservation {
     private final LocalDateTime requestedAt;
     private ReservationStatus status;
     private String allocatedRoomId;
+    private String failureReason;
 
     public Reservation(String reservationId, String guestName, String requestedRoomType) {
         this.reservationId = reservationId;
@@ -54,9 +55,17 @@ public class Reservation {
         this.allocatedRoomId = allocatedRoomId;
     }
 
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
+    }
+
     @Override
     public String toString() {
-        return String.format("Reservation{id='%s', guest='%s', roomType='%s', status=%s, allocatedRoomId='%s'}",
-            reservationId, guestName, requestedRoomType, status, allocatedRoomId);
+        return String.format("Reservation{id='%s', guest='%s', roomType='%s', status=%s, allocatedRoomId='%s', failureReason='%s'}",
+            reservationId, guestName, requestedRoomType, status, allocatedRoomId, failureReason);
     }
 }
