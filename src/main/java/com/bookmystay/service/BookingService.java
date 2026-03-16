@@ -29,7 +29,7 @@ public class BookingService {
         this.validator = new BookingValidator();
     }
 
-    public Reservation processNextRequest(BookingRequestQueue queue) {
+    public synchronized Reservation processNextRequest(BookingRequestQueue queue) {
         Reservation next = queue.pollNextRequest();
         if (next == null) {
             return null;
@@ -61,7 +61,7 @@ public class BookingService {
         return next;
     }
 
-    public String cancelReservation(String reservationId) throws InvalidCancellationException {
+    public synchronized String cancelReservation(String reservationId) throws InvalidCancellationException {
         Reservation reservation = confirmedReservationsById.get(reservationId);
         if (reservation == null) {
             throw new InvalidCancellationException("Reservation '" + reservationId + "' does not exist or was never confirmed.");
@@ -93,11 +93,11 @@ public class BookingService {
         return roomId;
     }
 
-    public Set<String> getAllocatedRoomIds() {
-        return Collections.unmodifiableSet(allocatedRoomIds);
+    public synchronized Set<String> getAllocatedRoomIds() {
+        return Collections.unmodifiableSet(new HashSet<>(allocatedRoomIds));
     }
 
-    public Map<String, Set<String>> getAllocatedByRoomType() {
+    public synchronized Map<String, Set<String>> getAllocatedByRoomType() {
         Map<String, Set<String>> copy = new HashMap<>();
         for (Map.Entry<String, Set<String>> entry : allocatedByRoomType.entrySet()) {
             copy.put(entry.getKey(), new HashSet<>(entry.getValue()));

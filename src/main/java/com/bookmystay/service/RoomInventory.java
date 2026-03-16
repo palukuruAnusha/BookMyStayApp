@@ -17,19 +17,19 @@ public class RoomInventory {
         this.roomAvailability = new HashMap<>(initialAvailability);
     }
 
-    public int getAvailability(String roomType) {
+    public synchronized int getAvailability(String roomType) {
         return roomAvailability.getOrDefault(roomType, 0);
     }
 
-    public boolean hasRoomType(String roomType) {
+    public synchronized boolean hasRoomType(String roomType) {
         return roomAvailability.containsKey(roomType);
     }
 
-    public Map<String, Integer> getCurrentAvailability() {
-        return Collections.unmodifiableMap(roomAvailability);
+    public synchronized Map<String, Integer> getCurrentAvailability() {
+        return Collections.unmodifiableMap(new HashMap<>(roomAvailability));
     }
 
-    public boolean updateAvailability(String roomType, int newCount) {
+    public synchronized boolean updateAvailability(String roomType, int newCount) {
         if (!roomAvailability.containsKey(roomType) || newCount < 0) {
             return false;
         }
@@ -37,7 +37,7 @@ public class RoomInventory {
         return true;
     }
 
-    public boolean decrementAvailability(String roomType) {
+    public synchronized boolean decrementAvailability(String roomType) {
         int current = getAvailability(roomType);
         if (current <= 0) {
             return false;
@@ -46,7 +46,7 @@ public class RoomInventory {
         return true;
     }
 
-    public boolean incrementAvailability(String roomType) {
+    public synchronized boolean incrementAvailability(String roomType) {
         if (!roomAvailability.containsKey(roomType)) {
             return false;
         }
@@ -54,11 +54,11 @@ public class RoomInventory {
         return true;
     }
 
-    public void registerRoomType(String roomType, int count) {
+    public synchronized void registerRoomType(String roomType, int count) {
         roomAvailability.put(roomType, Math.max(0, count));
     }
 
-    public void validateState() throws InventoryStateException {
+    public synchronized void validateState() throws InventoryStateException {
         for (Map.Entry<String, Integer> entry : roomAvailability.entrySet()) {
             if (entry.getValue() == null || entry.getValue() < 0) {
                 throw new InventoryStateException("Invalid inventory count for room type '" + entry.getKey() + "'.");
