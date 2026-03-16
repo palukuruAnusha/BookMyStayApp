@@ -5,8 +5,11 @@ import com.bookmystay.model.Room;
 import com.bookmystay.model.SingleRoom;
 import com.bookmystay.model.SuiteRoom;
 import com.bookmystay.service.RoomInventory;
+import com.bookmystay.service.RoomSearchService;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +24,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.2";
+    private static final String APP_VERSION = "v1.3";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -35,6 +38,11 @@ public final class HotelBookingApplication {
         Room doubleRoom = new DoubleRoom();
         Room suiteRoom = new SuiteRoom();
 
+        Map<String, Room> roomCatalog = new LinkedHashMap<>();
+        roomCatalog.put(singleRoom.getRoomType(), singleRoom);
+        roomCatalog.put(doubleRoom.getRoomType(), doubleRoom);
+        roomCatalog.put(suiteRoom.getRoomType(), suiteRoom);
+
         // UC3: Centralized inventory management using a HashMap.
         Map<String, Integer> initialAvailability = new HashMap<>();
         initialAvailability.put("Single", 4);
@@ -44,9 +52,13 @@ public final class HotelBookingApplication {
 
         System.out.println();
         System.out.println("Available Room Types:");
-        System.out.println(singleRoom.getDetails() + " | Available: " + inventory.getAvailability("Single"));
-        System.out.println(doubleRoom.getDetails() + " | Available: " + inventory.getAvailability("Double"));
-        System.out.println(suiteRoom.getDetails() + " | Available: " + inventory.getAvailability("Suite"));
+
+        // UC4: Search only reads inventory and filters out unavailable rooms.
+        RoomSearchService roomSearchService = new RoomSearchService();
+        List<Room> availableRooms = roomSearchService.findAvailableRooms(roomCatalog, inventory);
+        for (Room room : availableRooms) {
+            System.out.println(room.getDetails() + " | Available: " + inventory.getAvailability(room.getRoomType()));
+        }
 
         System.out.println();
         System.out.println("Startup complete. Exiting application.");
