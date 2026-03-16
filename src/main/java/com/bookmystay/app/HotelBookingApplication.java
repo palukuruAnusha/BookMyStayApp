@@ -1,5 +1,6 @@
 package com.bookmystay.app;
 
+import com.bookmystay.exception.InvalidCancellationException;
 import com.bookmystay.model.DoubleRoom;
 import com.bookmystay.model.AddOnService;
 import com.bookmystay.model.Reservation;
@@ -12,6 +13,7 @@ import com.bookmystay.service.BookingService;
 import com.bookmystay.service.BookingHistory;
 import com.bookmystay.service.BookingReportService;
 import com.bookmystay.service.BookingRequestQueue;
+import com.bookmystay.service.CancellationService;
 import com.bookmystay.service.RoomInventory;
 import com.bookmystay.service.RoomSearchService;
 
@@ -33,7 +35,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.9";
+    private static final String APP_VERSION = "v1.10";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -110,6 +112,37 @@ public final class HotelBookingApplication {
         System.out.println("Allocated Room IDs: " + bookingService.getAllocatedRoomIds());
         System.out.println("Allocation by Room Type: " + bookingService.getAllocatedByRoomType());
         System.out.println("Inventory after allocation: " + inventory.getCurrentAvailability());
+
+        // UC10: Cancellation with rollback stack and inventory restoration.
+        CancellationService cancellationService = new CancellationService(bookingService, bookingHistory);
+        System.out.println();
+        System.out.println("Cancellation Operations:");
+        if (!confirmedReservations.isEmpty()) {
+            String reservationToCancel = confirmedReservations.get(0).getReservationId();
+            try {
+                cancellationService.cancelReservation(reservationToCancel);
+                System.out.println("Cancelled -> " + reservationToCancel);
+            } catch (InvalidCancellationException ex) {
+                System.out.println("Cancellation Failed -> " + ex.getMessage());
+            }
+
+            try {
+                cancellationService.cancelReservation(reservationToCancel);
+                System.out.println("Cancelled -> " + reservationToCancel);
+            } catch (InvalidCancellationException ex) {
+                System.out.println("Cancellation Failed -> " + ex.getMessage());
+            }
+        }
+
+        try {
+            cancellationService.cancelReservation("R-9999");
+            System.out.println("Cancelled -> R-9999");
+        } catch (InvalidCancellationException ex) {
+            System.out.println("Cancellation Failed -> " + ex.getMessage());
+        }
+
+        System.out.println("Rollback Stack (released room IDs): " + cancellationService.getRollbackStackSnapshot());
+        System.out.println("Inventory after cancellation attempts: " + inventory.getCurrentAvailability());
 
         // UC7: Attach optional services to reservation IDs without mutating core booking state.
         AddOnServiceManager addOnServiceManager = new AddOnServiceManager();
