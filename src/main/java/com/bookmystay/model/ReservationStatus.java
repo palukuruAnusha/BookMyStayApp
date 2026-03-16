@@ -6,5 +6,6 @@ package com.bookmystay.model;
 public enum ReservationStatus {
     PENDING,
     CONFIRMED,
-    CANCELLED
+    CANCELLED,
+    FAILED
 }

@@ -33,7 +33,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.7";
+    private static final String APP_VERSION = "v1.9";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -74,6 +74,8 @@ public final class HotelBookingApplication {
         requestQueue.submitRequest(new Reservation("R-1001", "Asha", "Single"));
         requestQueue.submitRequest(new Reservation("R-1002", "Rahul", "Double"));
         requestQueue.submitRequest(new Reservation("R-1003", "Meena", "Suite"));
+        requestQueue.submitRequest(new Reservation("R-1004", "", "Single"));
+        requestQueue.submitRequest(new Reservation("R-1005", "Ishaan", "Penthouse"));
 
         System.out.println();
         System.out.println("Queued Booking Requests (FIFO order):");
@@ -98,8 +100,10 @@ public final class HotelBookingApplication {
                 System.out.println("Confirmed -> " + processed);
                 confirmedReservations.add(processed);
                 bookingHistory.addConfirmedReservation(processed);
+            } else if (processed.getStatus() == ReservationStatus.FAILED) {
+                System.out.println("Failed -> " + processed.getReservationId() + " | Reason: " + processed.getFailureReason());
             } else {
-                System.out.println("Pending (no availability) -> " + processed);
+                System.out.println("Pending -> " + processed.getReservationId() + " | Reason: " + processed.getFailureReason());
             }
         }
 
