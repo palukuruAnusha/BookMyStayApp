@@ -14,17 +14,17 @@ public class BookingHistory {
 
     private final List<Reservation> history = new ArrayList<>();
 
-    public void addConfirmedReservation(Reservation reservation) {
+    public synchronized void addConfirmedReservation(Reservation reservation) {
         if (reservation != null && reservation.getStatus() == ReservationStatus.CONFIRMED) {
             history.add(reservation);
         }
     }
 
-    public List<Reservation> getAllReservations() {
-        return Collections.unmodifiableList(history);
+    public synchronized List<Reservation> getAllReservations() {
+        return Collections.unmodifiableList(new ArrayList<>(history));
     }
 
-    public boolean markCancelled(String reservationId) {
+    public synchronized boolean markCancelled(String reservationId) {
         for (Reservation reservation : history) {
             if (reservation.getReservationId().equals(reservationId)) {
                 reservation.setStatus(ReservationStatus.CANCELLED);
