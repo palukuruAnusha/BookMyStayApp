@@ -14,23 +14,23 @@ public class BookingRequestQueue {
 
     private final Queue<Reservation> queue = new ArrayDeque<>();
 
-    public void submitRequest(Reservation reservation) {
+    public synchronized void submitRequest(Reservation reservation) {
         queue.offer(reservation);
     }
 
-    public Reservation pollNextRequest() {
+    public synchronized Reservation pollNextRequest() {
         return queue.poll();
     }
 
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
         return queue.isEmpty();
     }
 
-    public int size() {
+    public synchronized int size() {
         return queue.size();
     }
 
-    public List<Reservation> snapshotInArrivalOrder() {
+    public synchronized List<Reservation> snapshotInArrivalOrder() {
         return new ArrayList<>(queue);
     }
 }
