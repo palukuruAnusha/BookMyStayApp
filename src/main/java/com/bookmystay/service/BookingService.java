@@ -1,6 +1,7 @@
 package com.bookmystay.service;
 
 import com.bookmystay.exception.InvalidBookingException;
+import com.bookmystay.exception.InvalidCancellationException;
 import com.bookmystay.exception.InventoryStateException;
 import com.bookmystay.model.Reservation;
 import com.bookmystay.model.ReservationStatus;
@@ -21,6 +22,7 @@ public class BookingService {
     private final Set<String> allocatedRoomIds = new HashSet<>();
     private final Map<String, Set<String>> allocatedByRoomType = new HashMap<>();
     private final Map<String, Integer> roomTypeAllocationCounter = new HashMap<>();
+    private final Map<String, Reservation> confirmedReservationsById = new HashMap<>();
 
     public BookingService(RoomInventory inventory) {
         this.inventory = inventory;
@@ -55,7 +57,40 @@ public class BookingService {
         next.setAllocatedRoomId(roomId);
         next.setStatus(ReservationStatus.CONFIRMED);
         next.setFailureReason(null);
+        confirmedReservationsById.put(next.getReservationId(), next);
         return next;
+    }
+
+    public String cancelReservation(String reservationId) throws InvalidCancellationException {
+        Reservation reservation = confirmedReservationsById.get(reservationId);
+        if (reservation == null) {
+            throw new InvalidCancellationException("Reservation '" + reservationId + "' does not exist or was never confirmed.");
+        }
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new InvalidCancellationException("Reservation '" + reservationId + "' is already cancelled.");
+        }
+
+        String roomType = reservation.getRequestedRoomType();
+        String roomId = reservation.getAllocatedRoomId();
+        if (roomId == null || !allocatedRoomIds.contains(roomId)) {
+            throw new InvalidCancellationException("Allocated room ID for reservation '" + reservationId + "' is not active.");
+        }
+
+        allocatedRoomIds.remove(roomId);
+        Set<String> typeAllocations = allocatedByRoomType.get(roomType);
+        if (typeAllocations != null) {
+            typeAllocations.remove(roomId);
+            if (typeAllocations.isEmpty()) {
+                allocatedByRoomType.remove(roomType);
+            }
+        }
+
+        if (!inventory.incrementAvailability(roomType)) {
+            throw new InvalidCancellationException("Failed to restore inventory for room type '" + roomType + "'.");
+        }
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+        return roomId;
     }
 
     public Set<String> getAllocatedRoomIds() {

@@ -23,4 +23,14 @@ public class BookingHistory {
     public List<Reservation> getAllReservations() {
         return Collections.unmodifiableList(history);
     }
+
+    public boolean markCancelled(String reservationId) {
+        for (Reservation reservation : history) {
+            if (reservation.getReservationId().equals(reservationId)) {
+                reservation.setStatus(ReservationStatus.CANCELLED);
+                return true;
+            }
+        }
+        return false;
+    }
 }
