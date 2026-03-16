@@ -12,6 +12,7 @@ public class Reservation {
     private final String requestedRoomType;
     private final LocalDateTime requestedAt;
     private ReservationStatus status;
+    private String allocatedRoomId;
 
     public Reservation(String reservationId, String guestName, String requestedRoomType) {
         this.reservationId = reservationId;
@@ -45,9 +46,17 @@ public class Reservation {
         this.status = status;
     }
 
+    public String getAllocatedRoomId() {
+        return allocatedRoomId;
+    }
+
+    public void setAllocatedRoomId(String allocatedRoomId) {
+        this.allocatedRoomId = allocatedRoomId;
+    }
+
     @Override
     public String toString() {
-        return String.format("Reservation{id='%s', guest='%s', roomType='%s', status=%s}",
-                reservationId, guestName, requestedRoomType, status);
+        return String.format("Reservation{id='%s', guest='%s', roomType='%s', status=%s, allocatedRoomId='%s'}",
+            reservationId, guestName, requestedRoomType, status, allocatedRoomId);
     }
 }

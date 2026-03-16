@@ -2,9 +2,11 @@ package com.bookmystay.app;
 
 import com.bookmystay.model.DoubleRoom;
 import com.bookmystay.model.Reservation;
+import com.bookmystay.model.ReservationStatus;
 import com.bookmystay.model.Room;
 import com.bookmystay.model.SingleRoom;
 import com.bookmystay.model.SuiteRoom;
+import com.bookmystay.service.BookingService;
 import com.bookmystay.service.BookingRequestQueue;
 import com.bookmystay.service.RoomInventory;
 import com.bookmystay.service.RoomSearchService;
@@ -26,7 +28,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.4";
+    private static final String APP_VERSION = "v1.5";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -74,6 +76,27 @@ public final class HotelBookingApplication {
             System.out.println(reservation);
         }
         System.out.println("Inventory unchanged after request intake: " + inventory.getCurrentAvailability());
+
+        // UC6: Confirm requests, allocate unique room IDs, and decrement inventory.
+        BookingService bookingService = new BookingService(inventory);
+        System.out.println();
+        System.out.println("Reservation Confirmations:");
+        while (!requestQueue.isEmpty()) {
+            Reservation processed = bookingService.processNextRequest(requestQueue);
+            if (processed == null) {
+                continue;
+            }
+
+            if (processed.getStatus() == ReservationStatus.CONFIRMED) {
+                System.out.println("Confirmed -> " + processed);
+            } else {
+                System.out.println("Pending (no availability) -> " + processed);
+            }
+        }
+
+        System.out.println("Allocated Room IDs: " + bookingService.getAllocatedRoomIds());
+        System.out.println("Allocation by Room Type: " + bookingService.getAllocatedByRoomType());
+        System.out.println("Inventory after allocation: " + inventory.getCurrentAvailability());
 
         System.out.println();
         System.out.println("Startup complete. Exiting application.");

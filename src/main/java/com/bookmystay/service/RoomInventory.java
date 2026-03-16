@@ -31,6 +31,23 @@ public class RoomInventory {
         return true;
     }
 
+    public boolean decrementAvailability(String roomType) {
+        int current = getAvailability(roomType);
+        if (current <= 0) {
+            return false;
+        }
+        roomAvailability.put(roomType, current - 1);
+        return true;
+    }
+
+    public boolean incrementAvailability(String roomType) {
+        if (!roomAvailability.containsKey(roomType)) {
+            return false;
+        }
+        roomAvailability.put(roomType, getAvailability(roomType) + 1);
+        return true;
+    }
+
     public void registerRoomType(String roomType, int count) {
         roomAvailability.put(roomType, Math.max(0, count));
     }
