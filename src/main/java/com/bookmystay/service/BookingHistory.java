@@ -33,4 +33,11 @@ public class BookingHistory {
         }
         return false;
     }
+
+    public synchronized void replaceAll(List<Reservation> reservations) {
+        history.clear();
+        if (reservations != null) {
+            history.addAll(reservations);
+        }
+    }
 }
