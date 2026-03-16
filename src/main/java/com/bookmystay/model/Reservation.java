@@ -1,11 +1,14 @@
 package com.bookmystay.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * Represents a guest booking request and its lifecycle state.
  */
-public class Reservation {
+public class Reservation implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String reservationId;
     private final String guestName;

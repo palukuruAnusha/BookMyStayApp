@@ -15,14 +15,18 @@ import com.bookmystay.service.BookingReportService;
 import com.bookmystay.service.BookingRequestQueue;
 import com.bookmystay.service.CancellationService;
 import com.bookmystay.service.ConcurrentBookingProcessor;
+import com.bookmystay.service.PersistenceService;
 import com.bookmystay.service.RoomInventory;
 import com.bookmystay.service.RoomSearchService;
+import com.bookmystay.service.SystemStateSnapshot;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Application entry point for the BookMyStay hotel booking system.
@@ -36,7 +40,7 @@ import java.util.Map;
 public final class HotelBookingApplication {
 
     private static final String APP_NAME = "BookMyStay - Hotel Booking Management System";
-    private static final String APP_VERSION = "v1.11";
+    private static final String APP_VERSION = "v1.12";
 
     private HotelBookingApplication() {
         // Utility class pattern for entry point holder.
@@ -206,6 +210,27 @@ public final class HotelBookingApplication {
         }
         System.out.println("Summary Report:");
         System.out.println(reportService.generateSummaryReport(bookingHistory));
+
+        // UC12: Persist inventory and booking history and recover on startup.
+        PersistenceService persistenceService = new PersistenceService();
+        Path stateFile = Paths.get("data", "bookmystay-state.ser");
+        boolean saveSuccessful = persistenceService.saveState(stateFile, inventory, bookingHistory);
+
+        System.out.println();
+        System.out.println("Persistence Save Status: " + saveSuccessful);
+
+        SystemStateSnapshot recoveredSnapshot = persistenceService.loadState(stateFile);
+        RoomInventory recoveredInventory = new RoomInventory(recoveredSnapshot.getInventoryState());
+        BookingHistory recoveredHistory = new BookingHistory();
+        recoveredHistory.replaceAll(recoveredSnapshot.getBookingHistory());
+
+        System.out.println("Recovered Inventory: " + recoveredInventory.getCurrentAvailability());
+        System.out.println("Recovered Bookings Count: " + recoveredHistory.getAllReservations().size());
+
+        SystemStateSnapshot missingFileRecovery = persistenceService.loadState(Paths.get("data", "missing-state.ser"));
+        System.out.println("Missing File Recovery Snapshot Size: "
+            + missingFileRecovery.getInventoryState().size() + " inventory entries, "
+            + missingFileRecovery.getBookingHistory().size() + " bookings");
 
         System.out.println();
         System.out.println("Startup complete. Exiting application.");
